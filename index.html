@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医院运维系统 — 入口</title>
+<style>
+:root{--bg:#f6f7f9;--card:#ffffff;--primary:#185fa5;--text:#222;--muted:#666;--border:#e6e8ec;--warn:#b35900;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.wrap{max-width:560px;width:100%;}
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:14px;padding:28px 32px;box-shadow:0 1px 0 rgba(0,0,0,0.02);}
+h1{font-size:20px;font-weight:500;margin:0 0 4px 0;color:var(--primary);}
+.sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.url-box{background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:14px 16px;margin:16px 0;font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--text);line-height:1.5;}
+.url-box b{color:var(--muted);font-weight:400;display:block;font-size:11px;margin-bottom:6px;letter-spacing:0.5px;}
+.btn{display:inline-block;background:var(--primary);color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-size:14px;font-weight:500;transition:background 0.15s;}
+.btn:hover{background:#0c447c;}
+.meta{margin-top:18px;font-size:11px;color:var(--muted);text-align:center;}
+.warn{background:#fff8e6;border:0.5px solid #f0c674;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);margin-top:14px;display:none;}
+.warn.show{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>医院运维系统</h1>
+<p class="sub">点击下方按钮进入，或将本地址收藏作为永久入口</p>
+
+<div class="url-box">
+<b>当前访问地址</b>
+<a id="url" href="#" target="_blank" rel="noopener">加载中…</a>
+</div>
+
+<a id="btn" class="btn" href="#" target="_blank" rel="noopener">前往系统 →</a>
+
+<div id="warn" class="warn">⚠️ 服务可能暂时不可用，请稍后刷新重试。</div>
+
+<p class="meta" id="meta">更新时间：加载中…</p>
+</div>
+</div>
+
+<script>
+(async function(){
+  try{
+    const r = await fetch('config.json', {cache:'no-store'});
+    if(!r.ok) throw new Error('config ' + r.status);
+    const c = await r.json();
+    const u = c.url || '';
+    document.getElementById('url').textContent = u;
+    document.getElementById('url').href = u;
+    document.getElementById('btn').href = u;
+    document.getElementById('meta').textContent = '更新时间：' + (c.updated || '未知');
+    if(c.down){document.getElementById('warn').classList.add('show');}
+    if(c.url && c.auto!==false){setTimeout(function(){window.location.replace(c.url);}, 1500);}
+  }catch(e){
+    document.getElementById('url').textContent = '无法读取 config.json';
+    document.getElementById('warn').classList.add('show');
+    document.getElementById('warn').textContent = '⚠️ 配置读取失败：' + e.message;
+  }
+})();
+</script>
+</body>
+</html>
