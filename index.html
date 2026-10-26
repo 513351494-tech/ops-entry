@@ -25,7 +25,7 @@ h1{font-size:20px;font-weight:500;margin:0 0 4px 0;color:var(--primary);}
 <div class="wrap">
 <div class="card">
 <h1>医院运维系统</h1>
-<p class="sub">点击下方按钮进入，或将本地址收藏作为永久入口</p>
+<p class="sub">固定地址，可长期收藏使用</p>
 
 <div class="url-box">
 <b>当前访问地址</b>
@@ -36,28 +36,50 @@ h1{font-size:20px;font-weight:500;margin:0 0 4px 0;color:var(--primary);}
 
 <div id="warn" class="warn">⚠️ 服务可能暂时不可用，请稍后刷新重试。</div>
 
-<p class="meta" id="meta">更新时间：加载中…</p>
+<p class="meta" id="meta">正在检测服务状态…</p>
 </div>
 </div>
 
 <script>
-(async function(){
-  try{
-    const r = await fetch('config.json?t='+Date.now(), {cache:'no-store'});
-    if(!r.ok) throw new Error('config ' + r.status);
-    const c = await r.json();
-    const u = c.url || '';
-    document.getElementById('url').textContent = u;
-    document.getElementById('url').href = u;
-    document.getElementById('btn').href = u;
-    document.getElementById('meta').textContent = '更新时间：' + (c.updated || '未知');
-    if(c.down){document.getElementById('warn').classList.add('show');}
-    if(c.url && c.auto!==false){setTimeout(function(){window.location.replace(c.url);}, 1500);}
-  }catch(e){
-    document.getElementById('url').textContent = '无法读取 config.json';
-    document.getElementById('warn').classList.add('show');
-    document.getElementById('warn').textContent = '⚠️ 配置读取失败：' + e.message;
+(function(){
+  // 固定公网地址（serveo 已注册子域名，长期不变）
+  var FIXED = 'https://ops-lys-12320.serveousercontent.com';
+  var elUrl = document.getElementById('url');
+  var elBtn = document.getElementById('btn');
+  var elMeta = document.getElementById('meta');
+  var elWarn = document.getElementById('warn');
+
+  function apply(u, note){
+    elUrl.textContent = u;
+    elUrl.href = u;
+    elBtn.href = u;
+    if(note) elMeta.textContent = note;
   }
+
+  // 先用固定地址，保证 config 读取失败也能用
+  apply(FIXED, '固定地址');
+
+  // 再尝试读取 config.json 覆盖（本地/仓库有更新时以它为准）
+  var sources = [
+    'config.json?t=' + Date.now(),
+    'https://raw.githubusercontent.com/513351494-tech/ops-entry/main/config.json?t=' + Date.now()
+  ];
+
+  function tryConfig(i){
+    if(i >= sources.length){ elMeta.textContent = '固定地址 · config 未读取'; return; }
+    fetch(sources[i], {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(c){
+        var u = c.url || FIXED;
+        apply(u, '更新时间：' + (c.updated ? new Date(c.updated).toLocaleString('zh-CN') : '未知'));
+        if(c.down){ elWarn.classList.add('show'); }
+      })
+      .catch(function(){ tryConfig(i+1); });
+  }
+  tryConfig(0);
+
+  // 自动跳转（给 1.2 秒让页面先渲染出来）
+  setTimeout(function(){ window.location.replace(elBtn.href || FIXED); }, 1200);
 })();
 </script>
 </body>
